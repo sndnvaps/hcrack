@@ -22,7 +22,6 @@ Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]
 			               	a1 = alphanumerical, all = all ascii characters  Default: a1
 
 
-By default, hcrack will just try to bruteforce the password with numbers and letters, up to a length of 20 characters.
-Most likely, bruteforcing will either fail or take too long to be useful.  You should use a good wordlist instead.
-Wordlist mode is activated with (-w).
+By default, hcrack will just try to bruteforce the password. Most likely, bruteforcing will either fail or take too long to be useful.  
+You should use a good wordlist instead.  Wordlist mode is activated with (-w).
 
