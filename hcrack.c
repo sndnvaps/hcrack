@@ -12,7 +12,7 @@
 //
 
 char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
-			  "Usage: hcrack [-h hash] [-k key] [-w wordlist]\n"
+			  "Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]\n"
 			  "-h hash,			hmac hash to crack\n"
 			  "-k key,				hmac key that goes with hash\n"
 			  "-t threads,			number of threads to use concurrently. Default: 1\n"
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 			{
 				struct thread_args args;
 				args.pw_len = i+q;
-				args.keyspace = alnum;
+				args.keyspace = alpha;
 				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args);
 			}
 			for(i=0;i<numThreads;i++)
