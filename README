@@ -1,0 +1,24 @@
+HCRACK
+===========
+
+HCRACK is a HMAC-MD5 message cracker written in C.
+
+HMAC-MD5 is sometimes used for client-side credential hashing, with a temporary key.
+One of the more notable examples of this is with Pearson's PowerSchool, where HMAC is used
+essentially as a method to secure credentials in absence of HTTPS.  One can sniff these
+two variables, the HMAC_MD5 key and hash, and easily crack the original password with this tool.
+This type of client side security is just kind of silly.
+
+
+USAGE
+============
+
+Usage: hcrack [-h hash] [-k key] [-w wordlist]
+-h hash,			hmac hash to crack
+-k key,				hmac key that goes with hash
+-w wordlist,				wordlist mode, follow with path to wordlist, one word per line
+
+By default, hcrack will just try to bruteforce the password with numbers and letters, up to a length of 20 characters.
+Most likely, bruteforcing will either fail or take too long to be useful.  You should use a good wordlist instead.
+Wordlist mode is activated with (-w).
+
