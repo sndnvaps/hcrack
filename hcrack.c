@@ -19,7 +19,6 @@ char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 char *key;
 char *hash;
 char *wl;
-char guess[64];
 int want_stop = 0;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
