@@ -13,10 +13,14 @@ This type of client side security is just kind of silly.
 USAGE
 ============
 
-Usage: hcrack [-h hash] [-k key] [-w wordlist]
--h hash,			hmac hash to crack
+Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]
+-h hash,  		hmac hash to crack
 -k key,				hmac key that goes with hash
--w wordlist,				wordlist mode, follow with path to wordlist, one word per line
+-t threads,			number of threads to use concurrently. Default: 1
+-w wordlist,			wordlist mode, follow with path to wordlist, one word per line
+-b [a] [a1] [all],		(optional)character set for bruteforce: a = alphabet,
+			               	a1 = alphanumerical, all = all ascii characters  Default: a1
+
 
 By default, hcrack will just try to bruteforce the password with numbers and letters, up to a length of 20 characters.
 Most likely, bruteforcing will either fail or take too long to be useful.  You should use a good wordlist instead.
