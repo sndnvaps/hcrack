@@ -142,14 +142,13 @@ int main(int argc, char** argv)
 	{
 		hmac_wordlist(wl);
 	} else {
-		printf("Attempting to bruteforce!  This will take a while...");
-		int i;
-		for(i=1;i<20;i++)
+		printf("Attempting to bruteforce!  This will take a while...\n");
+		int i = 1;
+		while(!want_stop)
 		{
-			if(!want_stop)
-			{
-				hmac_brute(alnum, i);
-			}
+			printf("Cracking %d characters...\n", i);
+			hmac_brute(alnum, i);
+			i++;
 		}
 	}
 }
