@@ -4,7 +4,6 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 //
 //
 //	This is free software
@@ -15,7 +14,6 @@ char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]\n"
 			  "-h hash,			hmac hash to crack\n"
 			  "-k key,				hmac key that goes with hash\n"
-			  "-t threads,			number of threads to use concurrently. Default: 1\n"
 			  "-w wordlist,			wordlist mode, follow with path to wordlist, one word per line\n" 
 			  "-b [a] [a1] [all],		(optional)character set for bruteforce: a = alphabet,\n"
 			  "				a1 = alphanumerical, all = all ascii characters  Default: a1\n\n";
@@ -61,15 +59,9 @@ void hmac_wordlist(char *wl_path)
 		}
 	}
 }
-struct thread_args {
-	int pw_len;
-	char *keyspace;
-};
-void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
+
+void *hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help with this one.
 {
-	struct thread_args *arguments = args;
-	int pw_len = arguments->pw_len; 
-	char *keyspace = arguments->keyspace;
 	int keyspace_len = strlen(keyspace);
 	int state[pw_len];
 
@@ -99,7 +91,7 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
 		{
 			printf("Password: %s\n", text);
 			want_stop = 1;
-			break;
+			return;
 		}
 
 		int index = 0;
@@ -109,10 +101,9 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
 		}
 		if(index == pw_len)
 		{
-			break;
+			return;
 		}
 	}
-	pthread_exit(NULL);
 }
 
 
@@ -182,23 +173,11 @@ int main(int argc, char** argv)
 		hmac_wordlist(wl);
 	} else {
 		printf("Attempting to bruteforce!  This will take a while...\n");
-		int i = 0;
-		int q = 0;
-		pthread_t threads[numThreads-1];
+		int i = 1;
 		while(!want_stop)
 		{
-			for(i=0;i<numThreads;i++)
-			{
-				struct thread_args args;
-				args.pw_len = i+q;
-				args.keyspace = charset;
-				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args);
-			}
-			for(i=0;i<numThreads;i++)
-			{
-				pthread_join(threads[i], NULL);
-			}
-			q += numThreads;
+			hmac_brute(charset, i);
+			i++;
 		}
 	}
 }

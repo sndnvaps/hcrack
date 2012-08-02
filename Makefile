@@ -1,2 +1,2 @@
 all:
-	gcc -O2 -pthread -o hcrack hcrack.c
+	gcc -O2 -o hcrack hcrack.c
