@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 //
 //
 //	This is free software
@@ -14,12 +15,14 @@ char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "Usage: hcrack [-h hash] [-k key] [-w wordlist]\n"
 			  "-h hash,			hmac hash to crack\n"
 			  "-k key,				hmac key that goes with hash\n"
+			  "-t threads,			number of threads to use concurrently. Default: 1\n"
 			  "-w				wordlist mode, follow with path to wordlist, one word per line\n\n"; 
 
 char *key;
 char *hash;
 char *wl;
 int want_stop = 0;
+int numThreads;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
 
@@ -54,9 +57,15 @@ void hmac_wordlist(char *wl_path)
 		}
 	}
 }
-
-void hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help with this one.
+struct thread_args {
+	int pw_len;
+	char *keyspace;
+};
+void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
 {
+	struct thread_args *arguments = args;
+	int pw_len = arguments->pw_len; 
+	char *keyspace = arguments->keyspace;
 	int keyspace_len = strlen(keyspace);
 	int state[pw_len];
 
@@ -69,6 +78,8 @@ void hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help wit
 
 	while(1)
 	{
+		if(want_stop) break;
+
 		char guess[pw_len + 1];
 		for(i=0;i<pw_len;i++)
 		{
@@ -84,9 +95,9 @@ void hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help wit
 		sprintf(result, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);
 		if(strcmp(hash, result) == 0)
 		{
-			want_stop = 1;
 			printf("Password: %s\n", text);
-			return;
+			want_stop = 1;
+			break;
 		}
 
 		int index = 0;
@@ -96,9 +107,10 @@ void hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help wit
 		}
 		if(index == pw_len)
 		{
-			return;
+			break;
 		}
 	}
+	pthread_exit(NULL);
 }
 
 
@@ -110,10 +122,15 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 	int opt;
-	while((opt = getopt(argc, argv, "k:h:w:")) != -1)
+	numThreads = 1;
+
+	while((opt = getopt(argc, argv, "k:h:w:t:")) != -1)
 	{
 		switch(opt)
 		{	
+			case 't':
+				numThreads = atoi(optarg);
+				break;
 			case 'k':
 				key = optarg;
 				break;
@@ -143,12 +160,23 @@ int main(int argc, char** argv)
 		hmac_wordlist(wl);
 	} else {
 		printf("Attempting to bruteforce!  This will take a while...\n");
-		int i = 1;
+		int i = 0;
+		int q = 0;
+		pthread_t threads[numThreads-1];
 		while(!want_stop)
 		{
-			printf("Cracking %d characters...\n", i);
-			hmac_brute(alnum, i);
-			i++;
+			for(i=0;i<numThreads;i++)
+			{
+				struct thread_args args;
+				args.pw_len = i+q;
+				args.keyspace = alnum;
+				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args);
+			}
+			for(i=0;i<numThreads;i++)
+			{
+				pthread_join(threads[i], NULL);
+			}
+			q += numThreads;
 		}
 	}
 }
