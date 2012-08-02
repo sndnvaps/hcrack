@@ -16,7 +16,9 @@ char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "-h hash,			hmac hash to crack\n"
 			  "-k key,				hmac key that goes with hash\n"
 			  "-t threads,			number of threads to use concurrently. Default: 1\n"
-			  "-w				wordlist mode, follow with path to wordlist, one word per line\n\n"; 
+			  "-w wordlist,			wordlist mode, follow with path to wordlist, one word per line\n" 
+			  "-b [a] [a1] [all],		(optional)character set for bruteforce: a = alphabet,\n"
+			  "				a1 = alphanumerical, all = all ascii characters  Default: a1\n\n";
 
 char *key;
 char *hash;
@@ -25,6 +27,8 @@ int want_stop = 0;
 int numThreads;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
+char *all = "abcdefghujklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+[]{}\\|{};:'\"/?.>,<";
+char *charset;
 
 void hmac_wordlist(char *wl_path)
 {
@@ -76,10 +80,8 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
 		state[i] = 0;
 	}
 
-	while(1)
+	while(!want_stop)
 	{
-		if(want_stop) break;
-
 		char guess[pw_len + 1];
 		for(i=0;i<pw_len;i++)
 		{
@@ -123,11 +125,31 @@ int main(int argc, char** argv)
 	}
 	int opt;
 	numThreads = 1;
-
-	while((opt = getopt(argc, argv, "k:h:w:t:")) != -1)
+	charset = alnum;
+	while((opt = getopt(argc, argv, "k:h:w:t:b:")) != -1)
 	{
 		switch(opt)
 		{	
+			case 'b':
+				if(strcmp(optarg, "a") == 0)	
+				{
+					charset = alpha;
+					break;
+				} else 
+				if(strcmp(optarg, "a1") == 0)
+				{
+					charset = alnum;
+					break;
+				} else
+				if(strcmp(optarg, "all") == 0)
+				{
+					charset = all;
+					break;
+				} else {
+					printf("invalid character set specified!\n");
+					fprintf(stderr, usage);
+					exit(EXIT_FAILURE);
+				}
 			case 't':
 				numThreads = atoi(optarg);
 				break;
@@ -169,7 +191,7 @@ int main(int argc, char** argv)
 			{
 				struct thread_args args;
 				args.pw_len = i+q;
-				args.keyspace = alpha;
+				args.keyspace = charset;
 				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args);
 			}
 			for(i=0;i<numThreads;i++)
