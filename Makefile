@@ -1,2 +1,2 @@
 all:
-	gcc -O2 -o hcrack hcrack.c
+	gcc -pipe -fomit-frame-pointer -O2 -march=native -o hcrack hcrack.c
