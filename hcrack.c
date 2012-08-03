@@ -4,6 +4,9 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
+
+#define LIMIT_UNLIMITED 10000
 //
 //
 //	This is free software
@@ -12,6 +15,7 @@
 
 char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]\n"
+			  "-t threads,			number of threads to use.  Set this to your processors' core count.\n"
 			  "-h hash,			hmac hash to crack\n"
 			  "-k key,				hmac key that goes with hash\n"
 			  "-w wordlist,			wordlist mode, follow with path to wordlist, one word per line\n" 
@@ -22,7 +26,8 @@ char *key;
 char *hash;
 char *wl;
 int want_stop = 0;
-int numThreads;
+int thread_abort = 0;
+int num_threads;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
 char *all = "abcdefghujklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+[]{}\\|{};:'\"/?.>,<";
@@ -59,25 +64,41 @@ void hmac_wordlist(char *wl_path)
 		}
 	}
 }
+struct thread_args {
+	char *keyspace;
+	int pw_len;
+	int upper_limit;
+	int lower_limit;
+};
 
-void *hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help with this one.
+void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
 {
+	struct thread_args *arguments = args;
+	char *keyspace = arguments->keyspace;
+	int pw_len = arguments->pw_len;
+	int upper_limit = arguments->upper_limit;
+	int lower_limit = arguments->lower_limit;
+
 	int keyspace_len = strlen(keyspace);
 	int state[pw_len];
 
 	int i;
-
 	for(i=0;i<pw_len;i++)
 	{
 		state[i] = 0;
 	}
-
+	state[0] = upper_limit;
 	while(!want_stop)
 	{
 		char guess[pw_len + 1];
 		for(i=0;i<pw_len;i++)
 		{
+			//printf("%d\n", state[0]);
 			guess[i] = keyspace[state[i]];
+			if(state[0] == lower_limit)
+			{
+				pthread_exit(NULL);
+			}
 		}
 		guess[pw_len] = '\0';
 		unsigned char digest[16];
@@ -91,19 +112,20 @@ void *hmac_brute(char *keyspace, int pw_len)  // thanks to redlizard for help wi
 		{
 			printf("Password: %s\n", text);
 			want_stop = 1;
-			return;
+			break;
 		}
 
-		int index = 0;
+		int index = pw_len-1;
 		while(index<pw_len && ++state[index] == keyspace_len)
 		{
-			state[index++] = 0;
+			state[index--] = 0;
 		}
-		if(index == pw_len)
+		if(index == -1)
 		{
-			return;
+			break;
 		}
 	}
+	pthread_exit(NULL);
 }
 
 
@@ -115,8 +137,8 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 	int opt;
-	numThreads = 1;
-	charset = alnum;
+	charset = alpha;
+	num_threads = 1;
 	while((opt = getopt(argc, argv, "k:h:w:t:b:")) != -1)
 	{
 		switch(opt)
@@ -142,7 +164,7 @@ int main(int argc, char** argv)
 					exit(EXIT_FAILURE);
 				}
 			case 't':
-				numThreads = atoi(optarg);
+				num_threads = atoi(optarg);
 				break;
 			case 'k':
 				key = optarg;
@@ -173,11 +195,43 @@ int main(int argc, char** argv)
 		hmac_wordlist(wl);
 	} else {
 		printf("Attempting to bruteforce!  This will take a while...\n");
-		int i = 1;
+		int i;
+		int len = 1;
+		pthread_t threads[num_threads];
+		struct thread_args args[num_threads];
 		while(!want_stop)
 		{
-			hmac_brute(charset, i);
-			i++;
+			for(i=0;i<num_threads;i++)
+			{
+				args[i].keyspace = charset;
+				args[i].pw_len = len;
+			}
+			int last_limit=0;
+			int offset = 0;
+			int chars_per_thread = strlen(charset)/num_threads;
+			int remainder = strlen(charset) % num_threads;
+			if(remainder)
+			{
+				offset = remainder;
+			}
+			for(i=0;i<num_threads;i++)
+			{
+				args[i].upper_limit = last_limit;
+				if(i==num_threads-1)
+				{
+					args[i].lower_limit = LIMIT_UNLIMITED;
+				} else {
+					args[i].lower_limit = ((chars_per_thread*(1+i))+offset)-1;
+				}
+				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args[i]);
+				last_limit = (args[i].lower_limit+1);
+			}
+			for(i=0;i<num_threads;i++)
+			{
+				pthread_join(threads[i], NULL);
+	
+			}
+			len++;
 		}
 	}
 }
