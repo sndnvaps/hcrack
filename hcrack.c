@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 	int opt;
-	charset = alpha;
+	charset = alnum;
 	num_threads = 1;
 	while((opt = getopt(argc, argv, "k:h:w:t:b:")) != -1)
 	{
