@@ -26,7 +26,6 @@ char *key;
 char *hash;
 char *wl;
 int want_stop = 0;
-int thread_abort = 0;
 int num_threads;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
@@ -71,7 +70,7 @@ struct thread_args {
 	int lower_limit;
 };
 
-void *hmac_brute(void *args)  // thanks to redlizard for help with this one.
+void *hmac_brute(void *args)  // thanks to redlizard for help with this 
 {
 	struct thread_args *arguments = args;
 	char *keyspace = arguments->keyspace;
