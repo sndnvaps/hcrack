@@ -59,7 +59,6 @@ void string_to_digest(const char hexstring[])
 		pos += 2 * sizeof(char);
 	}
 }
-
 	
 void hmac_wordlist(char *wl_path)
 {
@@ -221,7 +220,7 @@ int main(int argc, char** argv)
 	} else {
 		printf("Attempting to bruteforce!  This will take a while...\n");
 		int i;
-		int len = 1;
+		int len = 5;
 		pthread_t threads[num_threads];
 		struct thread_args args[num_threads];
 		while(!want_stop)
