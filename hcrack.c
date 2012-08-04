@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 
 #define LIMIT_UNLIMITED 10000
 //
@@ -111,6 +112,7 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 	int key_len = strlen(key);
 
 	int i;
+
 	for(i=0;i<pw_len;i++)
 	{
 		state[i] = 0;
@@ -120,7 +122,6 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 	{
 		for(i=0;i<pw_len;i++)
 		{
-			//printf("%d\n", state[0]);
 			guess[i] = keyspace[state[i]];
 			if(state[0] == lower_limit)
 			{
@@ -137,16 +138,16 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 			want_stop = 1;
 			break;
 		}
-
+	
 		int index = pw_len-1;
 		while(++state[index] == keyspace_len)
 		{
 			state[index--] = 0;
-		}
+		} 
 		if(index == -1)
 		{
 			break;
-		}
+		}	
 	}
 	pthread_exit(NULL);
 }
@@ -225,6 +226,7 @@ int main(int argc, char** argv)
 		struct thread_args args[num_threads];
 		while(!want_stop)
 		{
+			printf("cracking %d characters...\n", len);
 			for(i=0;i<num_threads;i++)
 			{
 				args[i].keyspace = charset;
@@ -245,15 +247,14 @@ int main(int argc, char** argv)
 				{
 					args[i].lower_limit = LIMIT_UNLIMITED;
 				} else {
-					args[i].lower_limit = ((chars_per_thread*(1+i))+offset)-1;
+					args[i].lower_limit = ((chars_per_thread*(1+i))+offset);
 				}
 				pthread_create(&threads[i], NULL, hmac_brute, (void *)&args[i]);
-				last_limit = (args[i].lower_limit+1);
+				last_limit = (args[i].lower_limit);
 			}
 			for(i=0;i<num_threads;i++)
 			{
 				pthread_join(threads[i], NULL);
-	
 			}
 			len++;
 		}
