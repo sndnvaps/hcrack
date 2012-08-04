@@ -63,11 +63,12 @@ void string_to_digest(const char hexstring[])
 void hmac_wordlist(char *wl_path)
 {
 	FILE *wordlist;
+	char buffer[256];
+	unsigned char digest[16];
+	int key_len = strlen(key);
 	wordlist = fopen(wl_path, "r");
 	while(!feof(wordlist))
 	{
-		char buffer[256];
-		unsigned char digest[16];
 		fgets(buffer, sizeof buffer, wordlist);
 		char *newline = strchr(buffer,'\n');
 		if(newline)
@@ -80,7 +81,6 @@ void hmac_wordlist(char *wl_path)
 			*returnchar = '\0';
 		}
 		int text_len = strlen(buffer);
-		int key_len = strlen(key);
 		hmac_md5(buffer, text_len, key, key_len, digest);
 		if(compare_digest(target_digest, digest))
 		{
@@ -106,6 +106,9 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 
 	int keyspace_len = strlen(keyspace);
 	int state[pw_len];
+	char guess[pw_len + 1];
+	unsigned char digest[16];
+	int key_len = strlen(key);
 
 	int i;
 	for(i=0;i<pw_len;i++)
@@ -115,7 +118,6 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 	state[0] = upper_limit;
 	while(!want_stop)
 	{
-		char guess[pw_len + 1];
 		for(i=0;i<pw_len;i++)
 		{
 			//printf("%d\n", state[0]);
@@ -126,10 +128,8 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 			}
 		}
 		guess[pw_len] = '\0';
-		unsigned char digest[16];
 		unsigned char *text = guess;
 		int text_len = strlen(text);
-		int key_len = strlen(key);
 		hmac_md5(text, text_len, key, key_len, digest);
 		if(compare_digest(target_digest, digest))
 		{
@@ -139,7 +139,7 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 		}
 
 		int index = pw_len-1;
-		while(index<pw_len && ++state[index] == keyspace_len)
+		while(++state[index] == keyspace_len)
 		{
 			state[index--] = 0;
 		}
@@ -220,7 +220,7 @@ int main(int argc, char** argv)
 	} else {
 		printf("Attempting to bruteforce!  This will take a while...\n");
 		int i;
-		int len = 5;
+		int len = 1;
 		pthread_t threads[num_threads];
 		struct thread_args args[num_threads];
 		while(!want_stop)
