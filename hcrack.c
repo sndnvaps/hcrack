@@ -145,6 +145,7 @@ int main(int argc, char** argv)
 			case 'b':
 				if(strcmp(optarg, "a") == 0)	
 				{
+					printf("HEre!\n");
 					charset = alpha;
 					break;
 				} else 
