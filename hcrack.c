@@ -31,7 +31,36 @@ char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
 char *alpha = "abcdefghijklmnopqrstuvwxyz";
 char *all = "abcdefghujklmnopqrstuvwxyz0123456789!@#$%^&*()-=_+[]{}\\|{};:'\"/?.>,<";
 char *charset;
+unsigned char target_digest[16];
 
+int compare_digest(unsigned char d1[], unsigned char d2[])
+{
+	int i;
+	if(sizeof(d1) != sizeof(d2))
+	{
+		return 0;
+	}
+	for(i=0;i<sizeof(d1);i++)
+	{
+		if(d1[i] != d2[i])
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+void string_to_digest(const char hexstring[])
+{
+	const char *pos = hexstring;
+	size_t count = 0;
+	for(count=0;count<sizeof(target_digest)/sizeof(target_digest[0]); count++)
+	{
+		sscanf(pos, "%2hhx", &target_digest[count]);
+		pos += 2 * sizeof(char);
+	}
+}
+
+	
 void hmac_wordlist(char *wl_path)
 {
 	FILE *wordlist;
@@ -54,9 +83,7 @@ void hmac_wordlist(char *wl_path)
 		int text_len = strlen(buffer);
 		int key_len = strlen(key);
 		hmac_md5(buffer, text_len, key, key_len, digest);
-		char result[33];
-		sprintf(result, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);
-		if(strcmp(result, hash) == 0)
+		if(compare_digest(target_digest, digest))
 		{
 			printf("Password: %s\n", buffer);
 			return;
@@ -105,9 +132,7 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 		int text_len = strlen(text);
 		int key_len = strlen(key);
 		hmac_md5(text, text_len, key, key_len, digest);
-		char result[33];
-		sprintf(result, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);
-		if(strcmp(hash, result) == 0)
+		if(compare_digest(target_digest, digest))
 		{
 			printf("Password: %s\n", text);
 			want_stop = 1;
@@ -145,7 +170,6 @@ int main(int argc, char** argv)
 			case 'b':
 				if(strcmp(optarg, "a") == 0)	
 				{
-					printf("HEre!\n");
 					charset = alpha;
 					break;
 				} else 
@@ -190,6 +214,7 @@ int main(int argc, char** argv)
 		fprintf(stderr, "You didn't specify a hmac_md5 key!\n");
 		exit(EXIT_FAILURE);
 	}
+	string_to_digest(hash);
 	if(wl)
 	{
 		hmac_wordlist(wl);
