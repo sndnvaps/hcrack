@@ -234,13 +234,14 @@ int main(int argc, char** argv)
 			}
 			int last_limit=0;
 			int offset = 0;
-			int chars_per_thread = strlen(charset)/num_threads;
-			int remainder = strlen(charset) % num_threads;
+			int charlen = strlen(charset);
+			int chars_per_thread = charlen / num_threads;
+			int remainder = charlen % num_threads;
 			if(remainder)
 			{
 				offset = remainder;
 			}
-			for(i=0;i<num_threads;i++)
+			for(i=0;i<num_threads && i<charlen;i++)
 			{
 				args[i].upper_limit = last_limit;
 				if(i==num_threads-1)
