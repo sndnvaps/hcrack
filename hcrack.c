@@ -235,8 +235,8 @@ int main(int argc, char** argv)
 			int last_limit=0;
 			int offset = 0;
 			int charlen = strlen(charset);
-			int chars_per_thread = charlen/num_threads;
-			int remainder = strlen(charset) % num_threads;
+			int chars_per_thread = charlen / num_threads;
+			int remainder = charlen % num_threads;
 			if(remainder)
 			{
 				offset = remainder;
