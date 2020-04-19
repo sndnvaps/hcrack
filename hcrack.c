@@ -17,7 +17,7 @@
 char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "Usage: hcrack [-t threads] [-h hash] [-k key] [-w wordlist]\n"
 			  "-t threads,			number of threads to use.  Set this to your processors' core count.\n"
-			  "-h hash,			hmac hash to crack\n"
+			  "-h hash,				hmac hash to crack\n"
 			  "-k key,			hmac key that goes with hash\n"
 			  "-w wordlist,			wordlist mode, follow with path to wordlist, one word per line\n" 
 			  "-b [a] [a1] [all],		(optional)character set for bruteforce: a = alphabet,\n"
