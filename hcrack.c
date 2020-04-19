@@ -21,11 +21,13 @@ char *usage = "hcrack 0.1: a hmac-md5 cracker written in C\n\n"
 			  "-k key,				hmac key that goes with hash\n"
 			  "-w wordlist,			wordlist mode, follow with path to wordlist, one word per line\n" 
 			  "-b [a] [a1] [all],		(optional)character set for bruteforce: a = alphabet,\n"
-			  "				a1 = alphanumerical, all = all ascii characters  Default: a1\n\n";
+			  "				a1 = alphanumerical, all = all ascii characters  Default: a1\n\n"
+			  "-i,				(optional)to crack the key instead of the message.\n";
 
 char *key;
 char *hash;
 char *wl;
+int inverse = 0;
 int want_stop = 0;
 int num_threads;
 char *alnum = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -82,7 +84,11 @@ void hmac_wordlist(char *wl_path)
 			*returnchar = '\0';
 		}
 		int text_len = strlen(buffer);
-		hmac_md5(buffer, text_len, key, key_len, digest);
+		if (!inverse) {
+			hmac_md5(buffer, text_len, key, key_len, digest);
+		} else {
+			hmac_md5(key, key_len, buffer, text_len, digest);
+		}
 		if(compare_digest(target_digest, digest))
 		{
 			printf("Password: %s\n", buffer);
@@ -131,7 +137,11 @@ void *hmac_brute(void *args)  // thanks to redlizard for help with this
 		guess[pw_len] = '\0';
 		unsigned char *text = guess;
 		int text_len = strlen(text);
-		hmac_md5(text, text_len, key, key_len, digest);
+		if (!inverse) {
+			hmac_md5(text, text_len, key, key_len, digest);
+		} else {
+			hmac_md5(key, key_len, text, text_len, digest);
+		}
 		if(compare_digest(target_digest, digest))
 		{
 			printf("Password: %s\n", text);
@@ -163,7 +173,7 @@ int main(int argc, char** argv)
 	int opt;
 	charset = alnum;
 	num_threads = 1;
-	while((opt = getopt(argc, argv, "k:h:w:t:b:")) != -1)
+	while((opt = getopt(argc, argv, "k:h:w:t:b:i:")) != -1)
 	{
 		switch(opt)
 		{	
@@ -198,6 +208,9 @@ int main(int argc, char** argv)
 				break;
 			case 'w':
 				wl = optarg;	
+				break;
+			case 'i':
+				inverse = 1;
 				break;
 			case '?':
 				fprintf(stderr, usage);
