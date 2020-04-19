@@ -37,11 +37,7 @@ unsigned char target_digest[16];
 int compare_digest(unsigned char d1[], unsigned char d2[])
 {
 	int i;
-	if(sizeof(d1) != sizeof(d2))
-	{
-		return 0;
-	}
-	for(i=0;i<sizeof(d1);i++)
+	for(i=0;i<16;i++)
 	{
 		if(d1[i] != d2[i])
 		{
